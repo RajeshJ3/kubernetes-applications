@@ -1,0 +1,11 @@
+# directories
+/env*
+/__pycache__*
+
+# files
+/env.*
+/*.env
+/*.env.*
+
+# git
+/.git*
