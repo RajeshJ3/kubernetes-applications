@@ -1,21 +1,30 @@
 services:
+  # FastAPI web server
   web:
     build: .
     command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+
+    # volumes mapping
     volumes:
       - .:/app
+
+    # port mapping docker:host
     ports:
       - "8000:8000"
+    
+    # from env files
     env_file:
       - .env.dev
     restart: "on-failure"
     depends_on:
       - cache
 
+  # redis db
   cache:
     image: "redis:alpine"
     volumes:
       - redis_data:/data
 
+# persistent volumes
 volumes:
   redis_data:
