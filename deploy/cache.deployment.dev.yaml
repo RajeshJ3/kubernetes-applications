@@ -1,0 +1,41 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "cache"
+  labels:
+    app: "cache"
+spec:
+  selector:
+    matchLabels:
+      app: "cache"
+  template:
+    metadata:
+      labels:
+        app: "cache"
+    spec:
+      containers:
+        - name: "redis"
+          image: "redis:alpine"
+          volumeMounts:
+            - mountPath: /data
+              name: cache-volume
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache-load-balancer
+spec:
+  selector:
+    app: cache
+  ports:
+    - port: 6379
+      targetPort: 6379
+  type: LoadBalancer
+# NOTE:
+
+# - apply cache-deployment like this:
+# $ kubectl apply -f deploy/cache.deployment.dev.yaml
+# $ kubectl delete deployment cache && kubectl delete service cache-load-balancer

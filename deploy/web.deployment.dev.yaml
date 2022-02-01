@@ -1,0 +1,66 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "web"
+  labels:
+    app: "web"
+spec:
+  selector:
+    matchLabels:
+      app: "web"
+  template:
+    metadata:
+      labels:
+        app: "web"
+    spec:
+      containers:
+        - name: "web"
+          image: "rajeshj3/fastapi_redis:latest"
+          command: ["sh"]
+          args: ["-c", "uvicorn main:app --host 0.0.0.0 --port 8000"]
+          envFrom:
+            - secretRef:
+                name: web.env
+---
+apiVersion: "autoscaling/v2beta1"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "web-hpa"
+  labels:
+    app: "web-hpa"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "web-hpa"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: "Resource"
+      resource:
+        name: "cpu"
+        targetAverageUtilization: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-load-balancer
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: LoadBalancer
+---
+# kubectl expose deployment web --port=80 --target-port=8000 --name=web-load-balancer --type=LoadBalancer
+
+# OR
+
+# - create "web.env" env-file like this:
+# $ kubectl create secret generic web.env --from-env-file .env.dev
+# $ kubectl delete secret web.env
+
+# - apply web-deployment like this:
+# $ kubectl apply -f deploy/web.deployment.dev.yaml
+# $ kubectl delete deployment web && kubectl delete hpa web-hpa && kubectl delete service web-load-balancer
